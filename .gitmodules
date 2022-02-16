@@ -4,3 +4,9 @@
 [submodule "indexes/RSMI"]
 	path = indexes/RSMI
 	url = https://github.com/Liuguanli/RSMI.git
+[submodule "indexes/vptree"]
+	path = indexes/vptree
+	url = https://github.com/pderkowski/vptree.git
+[submodule "indexes/libspatialindex"]
+	path = indexes/libspatialindex
+	url = https://github.com/libspatialindex/libspatialindex.git
