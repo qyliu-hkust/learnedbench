@@ -10,3 +10,6 @@
 [submodule "indexes/libspatialindex"]
 	path = indexes/libspatialindex
 	url = https://github.com/libspatialindex/libspatialindex.git
+[submodule "tools/RMI"]
+	path = tools/RMI
+	url = https://github.com/learnedsystems/RMI.git
