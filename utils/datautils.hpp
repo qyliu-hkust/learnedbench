@@ -10,7 +10,7 @@
 
 
 // generate n d-dimensional uniform points in range [0, r]
-void gen_uniform(const std::string& fname, const int n, const int d, const double r) {
+inline void gen_uniform(const std::string& fname, const int n, const int d, const double r) {
     std::random_device rd;  
     std::mt19937 gen(rd()); 
     std::uniform_real_distribution<> dis(0.0, r);
@@ -28,7 +28,7 @@ void gen_uniform(const std::string& fname, const int n, const int d, const doubl
 
 
 // generate n d-dimensional points from a Gaussian distribution N(0, s^2)
-void gen_gaussian(const std::string& fname, const int n, const int d, const double s) {
+inline void gen_gaussian(const std::string& fname, const int n, const int d, const double s) {
     std::random_device rd;  
     std::mt19937 gen(rd()); 
     std::normal_distribution<> dis(0.0, s);
@@ -45,7 +45,7 @@ void gen_gaussian(const std::string& fname, const int n, const int d, const doub
 
 
 // generate n d-dimensional points from a lognormal distribution mean=0 sigma=s
-void gen_lognormal(const std::string& fname, const int n, const int d, const double s) {
+inline void gen_lognormal(const std::string& fname, const int n, const int d, const double s) {
     std::random_device rd;  
     std::mt19937 gen(rd()); 
     std::lognormal_distribution<> dis(0.0, s);
@@ -71,7 +71,7 @@ struct dist_info_t {
 
 
 // read data
-void read_data(vec_of_double_vec_t& vv, const std::string& fname, const int n, const int d) {
+inline void read_data(vec_of_double_vec_t& vv, const std::string& fname, const int n, const int d) {
     vv.reserve(n);
 
     tpie::tpie_init();
@@ -94,7 +94,7 @@ void read_data(vec_of_double_vec_t& vv, const std::string& fname, const int n, c
 
 
 // trasform csv format data to binary data
-void csv_to_bin(const std::string& in_fname, const std::string& out_fname, const char delimiter, const int n, const int d) {
+inline void csv_to_bin(const std::string& in_fname, const std::string& out_fname, const char delimiter, const int n, const int d) {
     std::ifstream in_fs(in_fname);
     tpie::tpie_init();
     tpie::file_stream<double> out;

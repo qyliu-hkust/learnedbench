@@ -177,6 +177,6 @@ int main(int argc, char const *argv[]) {
         std::cout << desc << std::endl;
         return 1;
     }
-    
+
     return 0;
 }
