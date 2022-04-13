@@ -34,10 +34,10 @@ def lognormal(n, d, s):
 # 4 columns of lineitem table is used (l_quantity, l_extendedprice, l_discount, l_tax)
 # scale factor effect: #rows = 6 * s Million
 def tpc(s):
-    if not os.path.exists("./tools/tpch-dbgen/dbgen"):
+    if not os.path.exists("../tools/tpch-dbgen/dbgen"):
         print("Compile the tpch-dbgen first.")
         return
-    os.system("./tools/tpch-dbgen/dbgen -T L -b ./tools/tpch-dbgen/dists.dss -s {s}".format(s=s))
+    os.system("../tools/tpch-dbgen/dbgen -T L -b ../tools/tpch-dbgen/dists.dss -s {s}".format(s=s))
     df = pd.read_csv("lineitem.tbl", sep='|', header=None, usecols=[4, 5, 6, 7])
     df.to_csv(DATA_PATH + "real/tpc_{s}.csv".format(s=s), header=False, index=False)
     os.system("rm lineitem.tbl")
