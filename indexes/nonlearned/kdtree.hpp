@@ -1,8 +1,8 @@
 #pragma once
 
 #include "nanoflann.hpp"
-#include "../utils/type.hpp"
-#include "../utils/common.hpp"
+#include "../../utils/type.hpp"
+#include "../../utils/common.hpp"
 #include <cstddef>
 #include <vector>
 #include <chrono>
@@ -10,7 +10,7 @@
 namespace bench { namespace index {
 
 // kdtree adapter using nanoflann
-template <size_t Dim, size_t MaxSplit=10>
+template <size_t Dim, size_t MaxSplit=32>
 class KDTree {
 
 using Point = point_t<Dim>;
@@ -128,14 +128,12 @@ using kdtree_t = KDTreeVectorOfVectorsAdaptor<Points, double, Dim>;
 
 public:
 KDTree(Points& points) {
-    std::cout << "Construct kd-tree" << std::endl;
+    std::cout << "Construct kd-tree " << std::endl;
 
-    bench::common::dump_mem_usage();
     auto start = std::chrono::steady_clock::now();
     kdtree = new kdtree_t(Dim, points, MaxSplit);
     kdtree->index->buildIndex();
     auto end = std::chrono::steady_clock::now();
-    bench::common::dump_mem_usage();
     std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
 }
 

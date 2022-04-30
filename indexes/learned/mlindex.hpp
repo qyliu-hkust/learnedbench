@@ -1,8 +1,8 @@
 #pragma once
 
 #include "./dkm.hpp"
-#include "../utils/common.hpp"
-#include "../utils/type.hpp"
+#include "../../utils/common.hpp"
+#include "../../utils/type.hpp"
 #include "../pgm/pgm_index.hpp"
 #include <cstddef>
 #include <cstdint>

@@ -9,8 +9,8 @@
 #include <boost/multi_array.hpp>
 #include <vector>
 
-#include "type.hpp"
-#include "common.hpp"
+#include "../../utils/type.hpp"
+#include "../../utils/common.hpp"
 #include "../pgm/pgm_index.hpp"
 
 namespace bench { namespace index {

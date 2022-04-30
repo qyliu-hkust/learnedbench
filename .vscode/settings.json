@@ -3,6 +3,7 @@
         "cctype": "cpp",
         "clocale": "cpp",
         "cmath": "cpp",
+        "csignal": "cpp",
         "cstdarg": "cpp",
         "cstddef": "cpp",
         "cstdio": "cpp",
@@ -18,6 +19,7 @@
         "*.tcc": "cpp",
         "bitset": "cpp",
         "chrono": "cpp",
+        "cinttypes": "cpp",
         "complex": "cpp",
         "condition_variable": "cpp",
         "cstdint": "cpp",
@@ -45,6 +47,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "fstream": "cpp",
+        "future": "cpp",
         "initializer_list": "cpp",
         "iomanip": "cpp",
         "iosfwd": "cpp",
@@ -59,10 +62,10 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "cfenv": "cpp",
-        "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "*.ipp": "cpp"
     },
     "cmake.configureOnOpen": false
 }

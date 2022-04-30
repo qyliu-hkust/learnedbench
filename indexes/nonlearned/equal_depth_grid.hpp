@@ -8,8 +8,8 @@
 #include <utility>
 #include <vector>
 
-#include "../utils/type.hpp"
-#include "../utils/common.hpp"
+#include "../../utils/type.hpp"
+#include "../../utils/common.hpp"
 
 
 namespace bench { namespace index {
@@ -29,8 +29,6 @@ using Partitions = std::array<Partition, Dim>;
 public:
 EDG(Points& points) {
     std::cout << "Construct Euqal-Depth Grid K=" << K << std::endl;
-
-    bench::common::dump_mem_usage();
     auto start = std::chrono::steady_clock::now();
 
     // dimension offsets when computing bucket ID
@@ -61,7 +59,6 @@ EDG(Points& points) {
     }
 
     auto end = std::chrono::steady_clock::now();
-    bench::common::dump_mem_usage();
     std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
 }
 

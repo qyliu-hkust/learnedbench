@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../utils/type.hpp"
+#include "../../utils/type.hpp"
+#include "../../utils/common.hpp"
 #include <algorithm>
 #include <array>
 #include <boost/geometry/geometries/box.hpp>
@@ -16,7 +17,7 @@
 #include <vector>
 #include <iostream>
 #include <chrono>
-#include "common.hpp"
+
 
 
 namespace bench { namespace index {

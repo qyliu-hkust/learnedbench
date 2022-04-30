@@ -1,8 +1,10 @@
 #pragma once
 
 #include "../ann_1.1.2/include/ANN/ANN.h"
-#include "../utils/type.hpp"
-#include "../utils/common.hpp"
+#include "../../utils/type.hpp"
+#include "../../utils/common.hpp"
+#include "../base_index.hpp"
+
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -14,7 +16,7 @@
 namespace bench { namespace index {
 
 template <size_t Dim>
-class ANNKDTree {
+class ANNKDTree : public BaseIndex {
 
 using Point = point_t<Dim>;
 using Box = box_t<Dim>;
@@ -33,14 +35,11 @@ inline ANNKDTree(Points& points) {
         }
     }
 
-    bench::common::dump_mem_usage();
     auto start = std::chrono::steady_clock::now();
-
     index = new ANNkd_tree(kdtree_pts, points.size(), Dim);
-
     auto end = std::chrono::steady_clock::now();
-    bench::common::dump_mem_usage();
-    std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
+
+    build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 }
 
 ~ANNKDTree() {
@@ -54,7 +53,11 @@ inline Points knn_query(Point& q, size_t k, double eps=0.0) {
     nn_idx.resize(k);
     nn_dist.resize(k);
 
+    auto start = std::chrono::steady_clock::now();
     index->annkSearch(&q[0], k, &nn_idx[0], &nn_dist[0], eps);
+    auto end = std::chrono::steady_clock::now();
+    knn_count++;
+    knn_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
     Points result;
     result.reserve(k);
@@ -102,13 +105,9 @@ inline ANNBoxDecompositionTree(Points& points) {
         }
     }
 
-    bench::common::dump_mem_usage();
     auto start = std::chrono::steady_clock::now();
-
     index  = new ANNbd_tree(bdtree_pts, points.size(), Dim, BucketSize);
-
     auto end = std::chrono::steady_clock::now();
-    bench::common::dump_mem_usage();
     std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
 }
 

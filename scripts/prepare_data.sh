@@ -1,18 +1,17 @@
 #!/bin/bash
 
 DATA_PATH="../data/"
-BENCH_BIN="../build/bench"
+BENCH_BIN="../build/datagen"
+
+mkdir DATA_PATH
 
 REAL_DATA_PATH="${DATA_PATH}real/"
 SYN_DATA_PATH="${DATA_PATH}synthetic/"
 
-
 mkdir $REAL_DATA_PATH
 mkdir $SYN_DATA_PATH
-
-mkdir "${SYN_DATA_PATH}N"
-mkdir "${SYN_DATA_PATH}Dim"
 mkdir "${SYN_DATA_PATH}Default"
+
 
 
 # real data 
@@ -31,7 +30,7 @@ fi
 
 # synthetic data
 MILLION=1000000
-DEFAULT_N=10
+DEFAULT_N=50
 DEFAULT_D=2
 DEFAULT_S=1
 
@@ -44,7 +43,7 @@ do
         fname="${dist}_${n}m_${DEFAULT_D}_${DEFAULT_S}"
         real_n=$[$n * $MILLION] 
         $BENCH_BIN -t gen_data -f $fname --dist $dist -n $real_n -d $DEFAULT_D -s $DEFAULT_S
-        mv $fname "${SYN_DATA_PATH}N"
+        mv $fname "${SYN_DATA_PATH}"
     done
 done
     
@@ -57,7 +56,7 @@ do
         fname="${dist}_${DEFAULT_N}m_${d}_${DEFAULT_S}"
         real_n=$[$DEFAULT_N * $MILLION]
         $BENCH_BIN -t gen_data -f $fname --dist $dist -n $real_n -d $d -s $DEFAULT_S
-        mv $fname "${SYN_DATA_PATH}Dim"
+        mv $fname "${SYN_DATA_PATH}"
     done
 done
 

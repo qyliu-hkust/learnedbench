@@ -31,7 +31,6 @@ inline void gen_uniform(const std::string& fname, const int n, const int d, cons
     std::mt19937 gen(rd()); 
     std::uniform_real_distribution<> dis(0.0, r);
 
-    tpie::tpie_init();
     tpie::file_stream<double> out;
     out.open(fname);
     for (int i=0; i<n*d; ++i) {
@@ -39,7 +38,6 @@ inline void gen_uniform(const std::string& fname, const int n, const int d, cons
     }
     
     out.close();
-    tpie::tpie_finish();
 }
 
 
@@ -49,14 +47,12 @@ inline void gen_gaussian(const std::string& fname, const int n, const int d, con
     std::mt19937 gen(rd()); 
     std::normal_distribution<> dis(0.0, s);
 
-    tpie::tpie_init();
     tpie::file_stream<double> out;
     out.open(fname);
     for (int i=0; i<n*d; ++i) {
         out.write(dis(gen));
     }
     out.close();
-    tpie::tpie_finish();
 }
 
 
@@ -66,7 +62,6 @@ inline void gen_lognormal(const std::string& fname, const int n, const int d, co
     std::mt19937 gen(rd()); 
     std::lognormal_distribution<> dis(0.0, s);
 
-    tpie::tpie_init();
     tpie::file_stream<double> out;
     out.open(fname);
 
@@ -75,7 +70,6 @@ inline void gen_lognormal(const std::string& fname, const int n, const int d, co
     }
 
     out.close();
-    tpie::tpie_finish();
 }
 
 
@@ -110,7 +104,7 @@ template<size_t dim>
 inline void read_points(vec_of_point_t<dim>& out_points, const std::string& fname, const size_t N) {
     out_points.reserve(N);
 
-    // tpie::tpie_init();
+    tpie::tpie_init();
     tpie::file_stream<double> in;
     in.open(fname);
 
@@ -123,7 +117,7 @@ inline void read_points(vec_of_point_t<dim>& out_points, const std::string& fnam
     }
 
     in.close();
-    // tpie::tpie_finish();
+    tpie::tpie_finish();
 }
 
 
