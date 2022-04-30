@@ -30,7 +30,7 @@ fi
 
 # synthetic data
 MILLION=1000000
-DEFAULT_N=50
+DEFAULT_N=20
 DEFAULT_D=2
 DEFAULT_S=1
 
@@ -51,7 +51,7 @@ done
 echo "Generate data by varying different Dim..."
 for dist in "uniform" "gaussian" "lognormal"
 do
-    for d in 2 3 4 5 10
+    for d in 2 4 6 8 10
     do
         fname="${dist}_${DEFAULT_N}m_${d}_${DEFAULT_S}"
         real_n=$[$DEFAULT_N * $MILLION]

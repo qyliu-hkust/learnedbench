@@ -16,7 +16,6 @@
 
 namespace bench { namespace index {
 
-// Resolution: the grid resolution when computing the z-address
 // Epsilon: the error bound of the underlying 1-D learned index
 template<size_t Dim, size_t Epsilon=64>
 class ZMIndex : public BaseIndex {
@@ -32,6 +31,9 @@ public:
 
 ZMIndex(Points& points) : _data(points) {
     std::cout << "Construct ZM-Index " << "Epsilon=" << Epsilon << std::endl;
+
+    auto start = std::chrono::steady_clock::now();
+
     // boundaries of each dimension
     std::fill(mins.begin(), mins.end(), std::numeric_limits<double>::max());
     std::fill(maxs.begin(), maxs.end(), std::numeric_limits<double>::min());
@@ -57,37 +59,53 @@ ZMIndex(Points& points) : _data(points) {
         tuples.emplace_back(a2t(p));
     }
     
-    auto start = std::chrono::steady_clock::now();
     pgm_idx = new Index(tuples.begin(), tuples.end());
+
     auto end = std::chrono::steady_clock::now();
     build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-
-    std::cout << "Build time: " << get_build_time() << "[ms]" << std::endl;
-    std::cout << "Index size: " << pgm_idx->size_in_bytes() << std::endl;
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+    std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
 }
 
 ~ZMIndex() {
     delete this->pgm_idx;
 }
 
-size_t range(Box& box) {
+Points range_query(Box& box) {
     auto start = std::chrono::steady_clock::now();
 
     auto min_tup = a2t(box.min_corner());
     auto max_tup = a2t(box.max_corner());
-    auto count = std::distance(this->pgm_idx->range(min_tup, max_tup), this->pgm_idx->end());
+
+    std::vector<std::array<size_t, Dim>> temp;
+    for (auto it=this->pgm_idx->range(min_tup, max_tup); it!=this->pgm_idx->end(); ++it) {
+        temp.emplace_back(get_array_from_tuple(*it));
+    }
 
     auto end = std::chrono::steady_clock::now();
     range_count++;
     range_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-    return count;
+    Points result;
+    result.reserve(temp.size());
+    for (auto& tp : temp) {
+        Point p;
+        for (size_t d=0; d<Dim; ++d) {
+            p[d] = tp[d];
+        }
+        result.emplace_back(p);
+    }
+    
+    return result;
 }
 
-Points knn(Point& q, size_t k) {
+// this is approx knn not exact knn
+Points knn_query(Point& q, size_t k) {
     auto start = std::chrono::steady_clock::now();
+
     auto q_tup = a2t(q);
     auto results = this->pgm_idx->knn(q_tup, k);
+    
     auto end = std::chrono::steady_clock::now();
     knn_count++;
     knn_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
@@ -102,7 +120,7 @@ Points knn(Point& q, size_t k) {
     }
     for (auto& tp : temp) {
         Point p;
-        for (int d=0; d<Dim; ++d) {
+        for (size_t d=0; d<Dim; ++d) {
             p[d] = tp[d];
         }
         result_points.emplace_back(p);

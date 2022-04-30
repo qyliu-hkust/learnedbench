@@ -21,32 +21,31 @@ namespace bench { namespace index {
 // implementation of the IF-Index by augumenting boost rtree
 // the original paper uses linear interpolation whose error is generally large
 // instead, we train a simple linear regression model as a trade-off
-template<size_t Dim, size_t LeafNodeCap>
+template<size_t Dim, size_t LeafNodeCap=2000, size_t MaxElements=32, size_t sort_dim=0>
 class IFIndex : public BaseIndex {
 
 using Point = point_t<Dim>;
 using Points = std::vector<Point>;
 using Box = box_t<Dim>;
 
+public:
 // class of Leaf Node
 class LeafNode {
     public:
     std::vector<size_t> _ids;
+    Points _local_points;
     size_t count;
-    // the sort dimension is set to the first dimension by default
-    const size_t sort_dim;
     // the maximum prediction error
     size_t max_err;
     // predicted pos = slope * point[sort_dim] + intercept
     double slope;
     double intercept;
 
-    LeafNode(std::vector<size_t> ids, Points& points) : 
-    _ids(ids),
-    count(ids.size()),
-    sort_dim(0) {
+    LeafNode(std::vector<size_t> ids, Points& points) : _ids(ids), count(ids.size()) {
         std::vector<std::pair<size_t, double>> id_and_vals;
         std::vector<double> vals, ys;
+
+        _local_points.reserve(count);
 
         id_and_vals.reserve(count);
         vals.resize(this->count);
@@ -66,6 +65,11 @@ class LeafNode {
             vals[i] = std::get<1>(id_and_vals[i]);
             ys[i] = static_cast<double>(i);
         }
+
+        // update local points in the bucket
+        for (auto id : _ids) {
+            _local_points.emplace_back(points[id]);
+        }
         
         // train a linear regression model using ordinary least square
         auto [a, b] = simple_ordinary_least_squares(vals, ys);
@@ -79,8 +83,6 @@ class LeafNode {
             auto err = (pred >= i) ? (pred - i) : (i - pred);
             max_err = (err > max_err) ? err : max_err;
         }
-
-        print_model();
     }
 
     void print_model() {
@@ -101,10 +103,13 @@ class LeafNode {
 
 
 using pack_rtree_t = bgi::rtree<std::pair<Point, size_t>, bgi::linear<LeafNodeCap>>;
-using index_rtree_t = bgi::rtree<std::pair<Box, LeafNode>, bgi::linear<32>>;
+using index_rtree_t = bgi::rtree<std::pair<Box, LeafNode>, bgi::linear<MaxElements>>;
 
-public:
+
 IFIndex(Points& points) : _points(points) {
+    std::cout << "Construct IFIndex (on Rtree) " << "LeafNodeCap=" << LeafNodeCap 
+            << " MaxElements=" << MaxElements << " sort_dim=" << sort_dim << std::endl;
+
     auto start = std::chrono::steady_clock::now();
 
     std::vector<std::pair<Point, size_t>> point_with_id;
@@ -131,11 +136,18 @@ IFIndex(Points& points) : _points(points) {
         }
     }
 
+    if (temp_ids.size() != 0) {
+        idx_data.emplace_back(compute_mbr(temp_ids, points), LeafNode(temp_ids, points));
+        temp_ids.clear();
+    }
+
     // build index rtree
     _rt = new index_rtree_t(idx_data.begin(), idx_data.end());
 
     auto end = std::chrono::steady_clock::now();
     build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+    std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
 }
 
 ~IFIndex() {
@@ -146,15 +158,44 @@ inline size_t count() {
     return this->_points.size();
 }
 
+// the index size is the sum of rtree and all identifiers
 inline size_t index_size() {
-    auto num_leaf_nodes = count()/LeafNodeCap + 1;
-    
+    auto rt_size = bench::common::get_boost_rtree_statistics(*(this->_rt));
+    return rt_size + count() * sizeof(size_t);
 }
 
 Points range_query(Box& box) {
+    auto start = std::chrono::steady_clock::now();
 
+    Points result;
+    // for leaf nodes covered by the query box
+    // directly insert points to the result set
+    for (auto it=_rt->qbegin(bgi::covered_by(box)); it!=_rt->qend(); ++it) {
+        for (auto p : std::get<1>(*it)._local_points) {
+            result.emplace_back(p);
+        }
+    }
+
+    // for leaf nodes overlaps the query box 
+    // check whether the points are in the query range
+    for (auto it=_rt->qbegin(bgi::overlaps(box)); it!=_rt->qend(); ++it) {
+        const LeafNode& leaf = std::get<1>(*it);
+        auto [lo, hi] = search_leaf(leaf, box);
+        for (auto i=lo; i<=hi; ++i) {
+            Point temp_p = leaf._local_points[i];
+            if (bench::common::is_in_box(temp_p, box)) {
+                result.emplace_back(temp_p);
+            }
+        }
+    }
+
+    auto end = std::chrono::steady_clock::now();
+    
+    range_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    range_count ++;
+
+    return result;
 }
-
 
 private:
 Points& _points;
@@ -173,6 +214,25 @@ inline Box compute_mbr(std::vector<size_t>& ids, Points& points) {
     }
 
     return Box(mins, maxs);
+}
+
+inline size_t predict(const LeafNode& leaf, double val) {
+    double guess = leaf.slope * val + leaf.intercept;
+    if (guess < 0) {
+        return 0;
+    }
+    if (guess > (leaf.count - 1)) {
+        return leaf.count - 1;
+    }
+    return static_cast<size_t>(guess);
+}
+
+inline std::pair<size_t, size_t> search_leaf(const LeafNode& leaf, Box& box) {
+    size_t pred_min = predict(leaf, box.min_corner()[sort_dim]);
+    size_t pred_max = predict(leaf, box.max_corner()[sort_dim]);
+    size_t lo = (leaf.max_err > pred_min) ? 0 : (pred_min - leaf.max_err);
+    size_t hi = ((pred_max + leaf.max_err + 1) > leaf.count) ? (leaf.count - 1) : (pred_max + leaf.max_err);
+    return std::make_pair(lo, hi);
 }
 
 };

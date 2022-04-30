@@ -1,6 +1,12 @@
 # data files
-data
+data/
 .download
+
+# model files
+model_path/
+
+# experiment results
+results/
 
 # Prerequisites
 *.d

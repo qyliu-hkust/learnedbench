@@ -13,6 +13,11 @@
 #include <vector>
 #include <chrono>
 
+#ifdef HEAP_PROFILE
+#include <gperftools/heap-profiler.h>
+#endif
+
+
 namespace bench { namespace index {
 
 template <size_t Dim>
@@ -36,10 +41,22 @@ inline ANNKDTree(Points& points) {
     }
 
     auto start = std::chrono::steady_clock::now();
+
+#ifdef HEAP_PROFILE
+HeapProfilerStart("annkdtree");
+#endif
+
     index = new ANNkd_tree(kdtree_pts, points.size(), Dim);
+
+#ifdef HEAP_PROFILE
+HeapProfilerDump("final");
+HeapProfilerStop();
+#endif
+
     auto end = std::chrono::steady_clock::now();
 
     build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
 }
 
 ~ANNKDTree() {
@@ -56,8 +73,8 @@ inline Points knn_query(Point& q, size_t k, double eps=0.0) {
     auto start = std::chrono::steady_clock::now();
     index->annkSearch(&q[0], k, &nn_idx[0], &nn_dist[0], eps);
     auto end = std::chrono::steady_clock::now();
-    knn_count++;
-    knn_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    knn_count ++;
+    knn_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     Points result;
     result.reserve(k);

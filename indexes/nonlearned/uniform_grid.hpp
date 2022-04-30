@@ -2,6 +2,8 @@
 
 #include "../../utils/type.hpp"
 #include "../../utils/common.hpp"
+#include "../base_index.hpp"
+
 #include <algorithm>
 #include <array>
 #include <boost/geometry/geometries/box.hpp>
@@ -24,7 +26,7 @@ namespace bench { namespace index {
 
 // uniform K by K ... grid 
 template<size_t dim, size_t K>
-class UG {
+class UG : public BaseIndex {
 
 using Point = point_t<dim>;
 using Points = std::vector<Point>;
@@ -65,12 +67,15 @@ public:
         }
 
         auto end = std::chrono::steady_clock::now();
-        std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
+        build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+        std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+        std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
     }
 
 
     Points range_query(Box& box) {
-        
+        auto start = std::chrono::steady_clock::now();
+
         // bucket ranges that intersect the query box
         std::vector<Range> ranges;
 
@@ -110,14 +115,19 @@ public:
             }
         }
 
+        auto end = std::chrono::steady_clock::now();
+        range_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        range_count ++;
         
-        // std::cout << "Query time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " [us]" << std::endl;
-
         return result;
     }
 
     inline size_t count() {
-        return num_of_points;
+        return this->num_of_points;
+    }
+
+    inline size_t index_size() {
+        return dim * (3 * sizeof(double) + sizeof(size_t)) + this->buckets.size() * sizeof(Points);
     }
 
 

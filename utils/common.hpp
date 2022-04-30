@@ -38,12 +38,15 @@ constexpr size_t find_grid_K(size_t N, size_t dim) {
 
 template<size_t dim>
 inline bool is_in_box(point_t<dim>& p, box_t<dim>& box) {
-    for (size_t d=0; d<dim; ++d) {
-        if ((p[d] > box.max_corner()[d]) || (p[d] < box.min_corner()[d])) {
-            return false;
-        }
-    }
-    return true;
+    // for (size_t d=0; d<dim; ++d) {
+    //     if ((p[d] > box.max_corner()[d]) || (p[d] < box.min_corner()[d])) {
+    //         return false;
+    //     }
+    // }
+
+    // return true;
+    
+    return boost::geometry::covered_by(p, box);
 }
 
 
@@ -111,7 +114,7 @@ inline void print_points(vec_of_point_t<dim>& points) {
 template<size_t dim>
 inline void print_knn_result(point_t<dim>& q, vec_of_point_t<dim>& knn) {
     std::sort(knn.begin(), knn.end(), 
-        [&q](point_t<3>& p1, point_t<3>& p2) -> bool { 
+        [&q](point_t<dim>& p1, point_t<dim>& p2) -> bool { 
             return eu_dist_square(p1, q) > eu_dist_square(p2, q); });
 
     for (auto p : knn) {
@@ -121,6 +124,88 @@ inline void print_knn_result(point_t<dim>& q, vec_of_point_t<dim>& knn) {
 }
 
 
+// Boost rtree visitor to compute rtree statistics
+template <typename Value, typename Options, typename Box, typename Allocators>
+struct statistics : public boost::geometry::index::detail::rtree::visitor<Value, typename Options::parameters_type, Box, Allocators, typename Options::node_tag, true>::type
+{
+    typedef typename boost::geometry::index::detail::rtree::internal_node<Value, typename Options::parameters_type, Box, Allocators, typename Options::node_tag>::type internal_node;
+    typedef typename boost::geometry::index::detail::rtree::leaf<Value, typename Options::parameters_type, Box, Allocators, typename Options::node_tag>::type leaf;
+
+    inline statistics()
+        : level(0)
+        , levels(1) // count root
+        , nodes(0)
+        , leaves(0)
+        , values(0)
+        , values_min(0)
+        , values_max(0)
+        , tree_size(0)
+    {}
+
+    inline void operator()(internal_node const& n)
+    {
+        typedef typename boost::geometry::index::detail::rtree::elements_type<internal_node>::type elements_type;
+        elements_type const& elements = boost::geometry::index::detail::rtree::elements(n);
+        
+        ++nodes; // count node
+        tree_size += sizeof(internal_node);
+
+        size_t const level_backup = level;
+        ++level;
+        
+        levels += level++ > levels ? 1 : 0; // count level (root already counted)
+                
+        for (typename elements_type::const_iterator it = elements.begin();
+            it != elements.end(); ++it)
+        {
+            boost::geometry::index::detail::rtree::apply_visitor(*this, *it->second);
+        }
+        
+        level = level_backup;
+    }
+
+    inline void operator()(leaf const& n)
+    {   
+        typedef typename boost::geometry::index::detail::rtree::elements_type<leaf>::type elements_type;
+        elements_type const& elements = boost::geometry::index::detail::rtree::elements(n);
+
+        ++leaves; // count leaves
+        tree_size += sizeof(leaf);
+        
+        std::size_t const v = elements.size();
+        // count values spread per node and total
+        values_min = (std::min)(values_min == 0 ? v : values_min, v);
+        values_max = (std::max)(values_max, v);
+        values += v;
+    }
+    
+    std::size_t level;
+    std::size_t levels;
+    std::size_t nodes;
+    std::size_t leaves;
+    std::size_t values;
+    std::size_t values_min;
+    std::size_t values_max;
+    std::size_t tree_size;
+};
+
+// apply the rtree visitor
+template <typename Rtree> inline
+size_t get_boost_rtree_statistics(Rtree const& tree) {
+    typedef boost::geometry::index::detail::rtree::utilities::view<Rtree> RTV;
+    RTV rtv(tree);
+
+    statistics<
+        typename RTV::value_type,
+        typename RTV::options_type,
+        typename RTV::box_type,
+        typename RTV::allocators_type
+    > stats_v;
+
+    rtv.apply_visitor(stats_v);
+
+    return stats_v.tree_size;
+}
 
 
 

@@ -12,11 +12,6 @@
 #include <chrono>
 
 
-#ifdef HEAP_PROFILE
-#include <gperftools/heap-profiler.h>
-#endif
-
-
 namespace bgi = boost::geometry::index;
 
 namespace bench { namespace index {
@@ -31,28 +26,21 @@ using rtree_t = bgi::rtree<Point, bgi::linear<MaxElements>>;
 
 public:
 inline RTree(Points& points) {
-    std::cout << "Construct R-tree " << "Dim=" << dim << " MaxElements=" << MaxElements << std::endl;
+    std::cout << "Construct R-tree " << "MaxElements=" << MaxElements << std::endl;
 
     auto start = std::chrono::steady_clock::now();
-
-#ifdef HEAP_PROFILE
-HeapProfilerStart("rtree");
-#endif
 
     // construct r-tree using packing algorithm
     rtree = new rtree_t(points.begin(), points.end());
 
-#ifdef HEAP_PROFILE
-HeapProfilerDump("final");
-HeapProfilerStop();
-#endif
-
     auto end = std::chrono::steady_clock::now();
     build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+    std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
 }
 
 ~RTree() {
-    delete rtree;
+    delete this->rtree;
 }
 
 
@@ -81,14 +69,18 @@ inline Points knn_query(Point& q, unsigned int k) {
 
 inline size_t count() {
     return rtree->size();
-} 
+}
+
+inline size_t index_size() {
+    return bench::common::get_boost_rtree_statistics(*rtree);
+}
 
 private:
 rtree_t* rtree;
 };
 
 template<size_t dim, size_t MaxElements=128>
-class RStarTree : BaseIndex {
+class RStarTree : public BaseIndex {
 
 using Point = point_t<dim>;
 using Box = box_t<dim>;
@@ -97,13 +89,9 @@ using rtree_t = bgi::rtree<Point, bgi::rstar<MaxElements>>;
 
 public:
 RStarTree(Points& points) {
-    std::cout << "Construct R*-tree " << "Dim=" << dim << " MaxElements=" << MaxElements << std::endl;
+    std::cout << "Construct R*-tree " << "MaxElements=" << MaxElements << std::endl;
 
     auto start = std::chrono::steady_clock::now();
-
-#ifdef HEAP_PROFILE
-HeapProfilerStart("rstartree");
-#endif
 
     rtree = new rtree_t();
 
@@ -111,13 +99,10 @@ HeapProfilerStart("rstartree");
         rtree->insert(p);
     }
 
-#ifdef HEAP_PROFILE
-HeapProfilerDump("final");
-HeapProfilerStop();
-#endif
-
     auto end = std::chrono::steady_clock::now();
     build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+    std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
 }
 
 ~RStarTree() {
@@ -148,7 +133,11 @@ inline Points knn_query(Point& q, unsigned int k) {
 
 inline size_t count() {
     return rtree->size();
-} 
+}
+
+inline size_t index_size() {
+    return bench::common::get_boost_rtree_statistics(*rtree);
+}
 
 
 private:

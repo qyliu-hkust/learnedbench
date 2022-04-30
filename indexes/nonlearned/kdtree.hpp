@@ -3,15 +3,21 @@
 #include "nanoflann.hpp"
 #include "../../utils/type.hpp"
 #include "../../utils/common.hpp"
+#include "../base_index.hpp"
+
 #include <cstddef>
 #include <vector>
 #include <chrono>
+
+#ifdef HEAP_PROFILE
+#include <gperftools/heap-profiler.h>
+#endif
 
 namespace bench { namespace index {
 
 // kdtree adapter using nanoflann
 template <size_t Dim, size_t MaxSplit=32>
-class KDTree {
+class KDTree : public BaseIndex {
 
 using Point = point_t<Dim>;
 using Box = box_t<Dim>;
@@ -128,13 +134,25 @@ using kdtree_t = KDTreeVectorOfVectorsAdaptor<Points, double, Dim>;
 
 public:
 KDTree(Points& points) {
-    std::cout << "Construct kd-tree " << std::endl;
+    std::cout << "Construct kd-tree MaxSplit=" << MaxSplit << std::endl;
 
     auto start = std::chrono::steady_clock::now();
+
+#ifdef HEAP_PROFILE
+    HeapProfilerStart("kdtree");
+#endif
+
     kdtree = new kdtree_t(Dim, points, MaxSplit);
     kdtree->index->buildIndex();
+
+#ifdef HEAP_PROFILE
+    HeapProfilerDump("final");
+    HeapProfilerStop();
+#endif
+
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
+    build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
 }
 
 ~KDTree() {
@@ -146,7 +164,11 @@ Points knn_query(Point& q, unsigned int k) {
     std::vector<size_t> ret_indexes(k);
     std::vector<double> out_dist_sqr(k);
 
+    auto start = std::chrono::steady_clock::now();
     kdtree->query(&q[0], num_of_results, &ret_indexes[0], &out_dist_sqr[0]);
+    auto end = std::chrono::steady_clock::now();
+    knn_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    knn_count ++;
 
     // final result
     Points result;

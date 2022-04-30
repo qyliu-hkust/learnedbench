@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "../base_index.hpp"
 #include "../../utils/type.hpp"
 #include "../../utils/common.hpp"
 
@@ -15,7 +16,7 @@
 namespace bench { namespace index {
 
 template<size_t Dim, size_t K>
-class EDG  {
+class EDG : public BaseIndex {
 
 using Point = point_t<Dim>;
 using Points = std::vector<Point>;
@@ -54,12 +55,14 @@ EDG(Points& points) {
         }
     }
 
-    for (auto p : points) {
+    for (auto& p : points) {
         buckets[compute_id(p)].emplace_back(p);
     }
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Construction time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " [ms]" << std::endl;
+    build_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    std::cout << "Build Time: " << get_build_time() << " [ms]" << std::endl;
+    std::cout << "Index Size: " << index_size() << " Bytes" << std::endl;
 }
 
 
@@ -69,7 +72,7 @@ Points range_query(Box& box) {
     std::vector<Range> ranges;
 
     // search range on the 1-st dimension
-    ranges.emplace_back(std::make_pair(get_dim_idx(box.min_corner(), 0), get_dim_idx(box.max_corner(), 0)));
+    ranges.emplace_back(get_dim_idx(box.min_corner(), 0), get_dim_idx(box.max_corner(), 0));
     
     // find all intersect ranges
     for (size_t i=1; i<Dim; ++i) {
@@ -79,7 +82,7 @@ Points range_query(Box& box) {
         std::vector<Range> temp_ranges;
         for (auto idx=start_idx; idx<=end_idx; ++idx) {
             for (size_t j=0; j<ranges.size(); ++j) {
-                temp_ranges.emplace_back(std::make_pair(ranges[j].first + idx*dim_offset[i], ranges[j].second + idx*dim_offset[i]));
+                temp_ranges.emplace_back(ranges[j].first + idx*dim_offset[i], ranges[j].second + idx*dim_offset[i]);
             }
         }
 
@@ -91,12 +94,12 @@ Points range_query(Box& box) {
     Points result;
 
     // find candidate points
-    for (auto range : ranges) {
+    for (auto& range : ranges) {
         auto start_idx = range.first;
         auto end_idx = range.second;
 
         for (auto idx=start_idx; idx<=end_idx; ++idx) {
-            for (auto cand : this->buckets[idx]) {
+            for (auto& cand : this->buckets[idx]) {
                 if (bench::common::is_in_box(cand, box)) {
                     result.emplace_back(cand);
                 }
@@ -105,7 +108,8 @@ Points range_query(Box& box) {
     }
 
     auto end = std::chrono::steady_clock::now();
-    std::cout << "Query time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " [us]" << std::endl;
+    range_count ++;
+    range_time += std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
     return result;
 }
@@ -114,8 +118,12 @@ inline size_t count() {
     return this->N;
 }
 
+inline size_t index_size() {
+    return Dim * K * sizeof(double) + Dim * sizeof(size_t) + buckets.size() * sizeof(Points);
+}
+
 void print_partitions() {
-    for (auto partition : partitions) {
+    for (auto& partition : partitions) {
         for (auto p : partition) {
             std::cout << p << " ";
         }
@@ -130,7 +138,7 @@ std::array<size_t, Dim> dim_offset;
 Partitions partitions; // bucket boundaries on each dimension
 
 // locate the bucket on d-th dimension using binary search
-inline size_t get_dim_idx(Point& p, const size_t& d) {
+inline size_t get_dim_idx(Point& p, size_t d) {
     if (p[d] <= partitions[d][0]) {
         return 0;
     } else {
