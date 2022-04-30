@@ -8,6 +8,8 @@ model_path/
 # experiment results
 results/
 
+build2/
+
 # Prerequisites
 *.d
 
