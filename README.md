@@ -101,6 +101,8 @@ Run experiments by varying eps: `bash run_exp_eps.sh`
 
 Run experiments of RSMI: `bash rsmi.sh`
 
+The results are put in `/project_root/results`, and the figure drawing Jupyter notebooks are put in `/project_root/figures`.
+
 ## Refence
 [1] Haixin Wang, Xiaoyi Fu, Jianliang Xu, and Hua Lu. 2019. Learned Index for Spatial Queries. In MDM. IEEE, 569–574.
 
