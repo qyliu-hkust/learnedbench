@@ -47,7 +47,7 @@ using ZM = bench::index::ZMIndex<BENCH_DIM, INDEX_ERROR_THRESHOLD>;
 using MLI = bench::index::MLIndex<BENCH_DIM, INDEX_ERROR_THRESHOLD>;
 using IFI = bench::index::IFIndex<BENCH_DIM>;
 using Flood = bench::index::Flood<BENCH_DIM, PARTITION_NUM, INDEX_ERROR_THRESHOLD>;
-using Lisa = bench::index::LISA2<BENCH_DIM, PARTITION_NUM, INDEX_ERROR_THRESHOLD>;
+using Lisa = bench::index::LISA2<BENCH_DIM, PARTITION_NUM, INDEX_ERROR_THRESHOLD>;          
 
 struct IndexSet {
     RTree*     rtree;
