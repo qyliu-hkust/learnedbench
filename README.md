@@ -26,7 +26,7 @@ We compare **six** recent multi-dimensional learned indices:
 - `TPIE`: https://github.com/thomasmoelhave/tpie
 - `GEOS`: https://libgeos.org/
 - `gperftools`: https://github.com/gperftools/gperftools
-- `libtorch`: 
+- `libtorch`: https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.4.0%2Bcpu.zip
 - `numpy` and `matplotlib` for result visualization
 
 ### Step 2: Build RSMI and ANN
@@ -92,9 +92,13 @@ bash prepare_data.sh
 We prepare several scripts to run the experiments.
 
 Run experiments on default settings: `bash run_exp.sh`
+
 Run experiments by varying N: `bash run_exp_n.sh`
+
 Run experiments by varying dim: `bash run_exp_dim.sh`
+
 Run experiments by varying eps: `bash run_exp_eps.sh`
+
 Run experiments of RSMI: `bash rsmi.sh`
 
 ## Refence
