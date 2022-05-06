@@ -103,7 +103,7 @@ Run experiments of RSMI: `bash rsmi.sh`
 
 The results are put in `/project_root/results`, and the figure drawing Jupyter notebooks are put in `/project_root/figures`.
 
-## Refence
+## Reference
 [1] Haixin Wang, Xiaoyi Fu, Jianliang Xu, and Hua Lu. 2019. Learned Index for Spatial Queries. In MDM. IEEE, 569–574.
 
 [2] Angjela Davitkova, Evica Milchevski, and Sebastian Michel. 2020. The ML-Index: A Multidimensional, Learned Index for Point, Range, and Nearest-Neighbor Queries. In EDBT. OpenProceedings.org, 407–410.
